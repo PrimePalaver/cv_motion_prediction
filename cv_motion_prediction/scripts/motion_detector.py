@@ -21,6 +21,7 @@ class MotionDetector(object):
         self.threshold_image = None
         self.bridge = CvBridge()                    # used to convert ROS messages to OpenCV
         self.image_info_window = None
+        self.hsv_image_blurred = None
 
         cv2.namedWindow('video_window')
         cv2.setMouseCallback('video_window', self.process_mouse_event)
@@ -73,12 +74,29 @@ class MotionDetector(object):
             called cv_image for subsequent processing """
         self.cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         self.hsv_image = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
-        
+        self.hsv_image_blurred = cv2.medianBlur(self.hsv_image, 7)
+        #cv2.GaussianBlur(self.hsv_image, self.hsv_image_blurred, )
+
         # orange soccer ball
         self.hsv_lb = (0, 90, 210)
         self.hsv_ub = (20, 230, 255)
 
         self.threshold_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
+
+        circles = cv2.HoughCircles(self.threshold_image, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=0, maxRadius=0)
+        
+        if (circles):
+            circles = np.uint16(np.around(circles))
+        
+            for i in circles[0,:]:
+                # draw outer circle
+                cv2.circle(self.cv_image, (i[0], i[1], i[2], (0,255,0),2))
+                # draw circle center
+                cv2.circle(self.cv_image, (i[0], i[1], i[2], 2, (255,0,0),3))
+        else:
+            print "no circles!"
+
+
 
     def process_mouse_event(self, event, x,y,flags,param):
         """ Process mouse events so that you can see the color values associated
@@ -104,6 +122,9 @@ class MotionDetector(object):
             if not self.cv_image is None:
                 print self.cv_image.shape
                 cv2.imshow('video_window', self.cv_image)
+                cv2.waitKey(5)
+            
+            if not self.threshold_image is None:                
                 cv2.imshow('threshold_image', self.threshold_image)
                 cv2.waitKey(5)
 
