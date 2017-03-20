@@ -72,6 +72,9 @@ class MotionDetector(object):
     def process_image(self, msg):
         """ Process image messages from ROS and stash them in an attribute
             called cv_image for subsequent processing """
+
+        print "process_image"
+
         self.cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         self.hsv_image = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
         self.hsv_image_blurred = cv2.medianBlur(self.hsv_image, 7)
@@ -83,7 +86,7 @@ class MotionDetector(object):
 
         self.threshold_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
 
-        circles = cv2.HoughCircles(self.threshold_image, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=0, maxRadius=0)
+        circles = cv2.HoughCircles(self.threshold_image, cv2.cv.CV_HOUGH_GRADIENT, 1, 480/8, param1=200, param2=100, minRadius=0, maxRadius=0)
         
         if (circles):
             circles = np.uint16(np.around(circles))
