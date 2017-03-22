@@ -30,14 +30,23 @@ class MotionDetector(object):
 
         # hsv slider
         cv2.namedWindow('threshold_image')
-        self.hsv_lb = np.array([0, 0, 0]) # hsv lower bound
-        cv2.createTrackbar('H lb', 'threshold_image', 0, 255, self.set_h_lb)
-        cv2.createTrackbar('S lb', 'threshold_image', 0, 255, self.set_s_lb)
-        cv2.createTrackbar('V lb', 'threshold_image', 0, 255, self.set_v_lb)
-        self.hsv_ub = np.array([255, 255, 255]) # hsv upper bound
-        cv2.createTrackbar('H ub', 'threshold_image', 0, 255, self.set_h_ub)
-        cv2.createTrackbar('S ub', 'threshold_image', 0, 255, self.set_s_ub)
-        cv2.createTrackbar('V ub', 'threshold_image', 0, 255, self.set_v_ub)
+        self.hsv_lb = np.array([0, 90, 210]) # hsv lower bound
+        cv2.createTrackbar('H lb', 'threshold_image', self.hsv_lb[0], 255, self.set_h_lb)
+        cv2.createTrackbar('S lb', 'threshold_image', self.hsv_lb[1], 255, self.set_s_lb)
+        cv2.createTrackbar('V lb', 'threshold_image', self.hsv_lb[2], 255, self.set_v_lb)
+        self.hsv_ub = np.array([20, 230, 255]) # hsv upper bound
+        cv2.createTrackbar('H ub', 'threshold_image', self.hsv_ub[0], 255, self.set_h_ub)
+        cv2.createTrackbar('S ub', 'threshold_image', self.hsv_ub[1], 255, self.set_s_ub)
+        cv2.createTrackbar('V ub', 'threshold_image', self.hsv_ub[2], 255, self.set_v_ub)
+
+        # circle detection slider
+        self.circle_params = np.array([50, 50])
+        cv2.createTrackbar('param1', 'threshold_image', self.circle_params[0], 200, self.set_param1)
+        cv2.createTrackbar('param2', 'threshold_image', self.circle_params[1], 200, self.set_param2)
+
+        # blur amount slider
+        self.blur_amount = 1
+        cv2.createTrackbar('blur amount', 'threshold_image', self.blur_amount, 51, self.set_blur)
 
         rospy.Subscriber(image_topic, Image, self.process_image)
 
@@ -68,6 +77,17 @@ class MotionDetector(object):
         """ set value upper bound """
         self.hsv_ub[2] = val
 
+    def set_param1(self, val):
+        """ set param1 for circle detection """
+        self.circle_params[0] = val
+
+    def set_param2(self, val):
+        """ set param2 for circle detection """
+        self.circle_params[1] = val
+
+    def set_blur(self, val):
+        """ set blur amount for HSV image"""
+        self.blur_amount = 2*val+1
 
     def process_image(self, msg):
         """ Process image messages from ROS and stash them in an attribute
@@ -77,25 +97,30 @@ class MotionDetector(object):
 
         self.cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
         self.hsv_image = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
-        self.hsv_image_blurred = cv2.medianBlur(self.hsv_image, 7)
+        self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
         #cv2.GaussianBlur(self.hsv_image, self.hsv_image_blurred, )
 
-        # orange soccer ball
-        self.hsv_lb = (0, 90, 210)
-        self.hsv_ub = (20, 230, 255)
-
         self.threshold_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
+        self.threshold_image = cv2.medianBlur(self.threshold_image, self.blur_amount)
 
-        circles = cv2.HoughCircles(self.threshold_image, cv2.cv.CV_HOUGH_GRADIENT, 1, 480/8, param1=200, param2=100, minRadius=0, maxRadius=0)
+        # dp: inverse ratio of the resolution (smaller = detect less circular
+        #     circles)
+        # minDist: minimum distance between the center of detected circles
+        # param1: gradient value used for edge detection
+        # param2: threshold for center detection
+        # minRadius: minimum size of circle radius in pixels
+        # maxRadius: maximum size of circle radius in pixels
+        circles = cv2.HoughCircles(self.threshold_image, cv2.cv.CV_HOUGH_GRADIENT, dp=1, minDist=480/8, param1=self.circle_params[0], param2=self.circle_params[1], minRadius=0, maxRadius=0)
         
-        if (circles):
+        if (circles != None and len(circles)):
             circles = np.uint16(np.around(circles))
         
             for i in circles[0,:]:
                 # draw outer circle
-                cv2.circle(self.cv_image, (i[0], i[1], i[2], (0,255,0),2))
+                cv2.circle(self.cv_image, (i[0], i[1]), i[2], (0,255,0), 2)
                 # draw circle center
-                cv2.circle(self.cv_image, (i[0], i[1], i[2], 2, (255,0,0),3))
+                cv2.circle(self.cv_image, (i[0], i[1]), 2, (255,0,0), 3)
+                print i[0], i[1]
         else:
             print "no circles!"
 
