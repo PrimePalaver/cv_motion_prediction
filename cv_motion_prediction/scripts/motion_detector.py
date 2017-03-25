@@ -26,7 +26,7 @@ class MotionDetector(object):
         cv2.namedWindow('video_window')
         cv2.setMouseCallback('video_window', self.process_mouse_event)
 
-        # rospy.on_shutdown(self.stop)
+        # rospy.on_shutdown(self.stop)    
 
         # hsv slider
         cv2.namedWindow('threshold_image')
@@ -110,7 +110,12 @@ class MotionDetector(object):
         # param2: threshold for center detection
         # minRadius: minimum size of circle radius in pixels
         # maxRadius: maximum size of circle radius in pixels
-        circles = cv2.HoughCircles(self.threshold_image, cv2.cv.CV_HOUGH_GRADIENT, dp=1, minDist=480/8, param1=self.circle_params[0], param2=self.circle_params[1], minRadius=0, maxRadius=0)
+        if cv2.__version__=='3.1.0-dev':
+            hough_gradient = cv2.HOUGH_GRADIENT
+        else:
+            hough_gradient = cv2.cv.CV_HOUGH_GRADIENT
+
+        circles = cv2.HoughCircles(self.threshold_image, hough_gradient, dp=1, minDist=480/8, param1=self.circle_params[0], param2=self.circle_params[1], minRadius=0, maxRadius=0)
         
         if (circles != None and len(circles)):
             circles = np.uint16(np.around(circles))
