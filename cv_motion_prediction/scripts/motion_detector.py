@@ -141,6 +141,11 @@ class MotionDetector(object):
         self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
         self.binary_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
 
+        if cv2.__version__=='3.1.0-dev':
+            hough_gradient = cv2.HOUGH_GRADIENT
+        else:
+            hough_gradient = cv2.cv.CV_HOUGH_GRADIENT
+
         # Parameters for cv2.HoughCircles
         # dp: inverse ratio of the resolution (smaller = detect less circular
         #     circles)
