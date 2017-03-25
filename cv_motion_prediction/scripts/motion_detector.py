@@ -41,14 +41,14 @@ class MotionDetector(object):
         cv2.namedWindow('sliders_window') # window for parameter sliders
 
         # HSV filter sliders
-        self.hsv_lb = np.array([0, 90, 210]) # hsv lower bound
+        self.hsv_lb = np.array([50, 250, 0]) # hsv lower bound
         cv2.createTrackbar('H lb', 'sliders_window', self.hsv_lb[0], 255,
             self.set_h_lb)
         cv2.createTrackbar('S lb', 'sliders_window', self.hsv_lb[1], 255,
             self.set_s_lb)
         cv2.createTrackbar('V lb', 'sliders_window', self.hsv_lb[2], 255,
             self.set_v_lb)
-        self.hsv_ub = np.array([20, 230, 255]) # hsv upper bound
+        self.hsv_ub = np.array([100, 255, 60]) # hsv upper bound
         cv2.createTrackbar('H ub', 'sliders_window', self.hsv_ub[0], 255,
             self.set_h_ub)
         cv2.createTrackbar('S ub', 'sliders_window', self.hsv_ub[1], 255,
@@ -177,11 +177,11 @@ class MotionDetector(object):
 
 
     def run(self):
-        """  """
+        """ Main run function """
+
         r = rospy.Rate(30)
         
         while not rospy.is_shutdown():
-
             if not self.bgr_image is None:
                 cv2.imshow('video_window', self.bgr_image)
                 cv2.waitKey(5)
@@ -190,7 +190,10 @@ class MotionDetector(object):
                 cv2.imshow('binary_window', self.binary_image)
                 cv2.waitKey(5)
 
-            r.sleep()
+            try:
+                r.sleep()
+            except rospy.exceptions.ROSTimeMovedBackwardsException:
+                print "Time went backwards. Carry on."
 
 
 if __name__ == '__main__':
