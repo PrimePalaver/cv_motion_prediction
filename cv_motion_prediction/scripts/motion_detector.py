@@ -70,9 +70,9 @@ class MotionDetector(object):
             200, self.set_param2)
 
         # Blur amount slider
-        self.blur_amount = 1
+        self.blur_amount = 10
         cv2.createTrackbar('blur amount', 'sliders_window', self.blur_amount,
-            51, self.set_blur)
+            50, self.set_blur)
 
         # Suscribe to ROS camera feed from Neato robot
         rospy.Subscriber(image_topic, Image, self.process_image)
@@ -137,7 +137,7 @@ class MotionDetector(object):
     def set_blur(self, val):
         """ Slider callback to set blur amount for image processing """
 
-        self.blur_amount = 2*val+1
+        self.blur_amount = val
 
 
     def process_image(self, msg):
@@ -151,7 +151,8 @@ class MotionDetector(object):
                 desired_encoding="bgr8")
             self.grayscale_image = cv2.cvtColor(self.bgr_image, self.bgr2gray)
             self.hsv_image = cv2.cvtColor(self.bgr_image, cv2.COLOR_BGR2HSV)
-            self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
+            self.hsv_image = cv2.medianBlur(self.hsv_image,
+                2*self.blur_amount+1)
             self.binary_image = cv2.inRange(self.hsv_image, self.hsv_lb,
                 self.hsv_ub)
 

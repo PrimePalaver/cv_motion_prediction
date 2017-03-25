@@ -1,4 +1,5 @@
 <launch>
 	<param name="/use_sim_time" value="False" />
-	<node name="node" pkg="cv_motion_prediction" type="motion_detector.py" />
+	<node name="node" pkg="cv_motion_prediction" type="motion_detector.py" 
+            output="screen" />
 </launch>
