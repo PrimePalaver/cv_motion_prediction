@@ -40,7 +40,7 @@ class MotionDetector(object):
         cv2.createTrackbar('V ub', 'threshold_image', self.hsv_ub[2], 255, self.set_v_ub)
 
         # circle detection slider
-        self.circle_params = np.array([50, 50])
+        self.circle_params = np.array([85, 85])
         cv2.createTrackbar('param1', 'threshold_image', self.circle_params[0], 200, self.set_param1)
         cv2.createTrackbar('param2', 'threshold_image', self.circle_params[1], 200, self.set_param2)
 
@@ -99,6 +99,7 @@ class MotionDetector(object):
         self.hsv_image = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
         self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
         #cv2.GaussianBlur(self.hsv_image, self.hsv_image_blurred, )
+        self.grayscale_image = cv2.cvtColor(self.cv_image, cv2.cv.CV_BGR2GRAY)
 
         self.threshold_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
         self.threshold_image = cv2.medianBlur(self.threshold_image, self.blur_amount)
@@ -110,12 +111,13 @@ class MotionDetector(object):
         # param2: threshold for center detection
         # minRadius: minimum size of circle radius in pixels
         # maxRadius: maximum size of circle radius in pixels
+
         if cv2.__version__=='3.1.0-dev':
             hough_gradient = cv2.HOUGH_GRADIENT
         else:
             hough_gradient = cv2.cv.CV_HOUGH_GRADIENT
 
-        circles = cv2.HoughCircles(self.threshold_image, hough_gradient, dp=1, minDist=480/8, param1=self.circle_params[0], param2=self.circle_params[1], minRadius=0, maxRadius=0)
+        circles = cv2.HoughCircles(self.grayscale_image, cv2.cv.CV_HOUGH_GRADIENT, dp=2, minDist=30, param1=self.circle_params[0], param2=self.circle_params[1], minRadius=0, maxRadius=0)
         
         if (circles != None and len(circles)):
             circles = np.uint16(np.around(circles))
@@ -125,9 +127,13 @@ class MotionDetector(object):
                 cv2.circle(self.cv_image, (i[0], i[1]), i[2], (0,255,0), 2)
                 # draw circle center
                 cv2.circle(self.cv_image, (i[0], i[1]), 2, (255,0,0), 3)
-                print i[0], i[1]
+                print "circles:", i[0], i[1]
         else:
             print "no circles!"
+
+        
+        cv2.imshow('video_window', self.cv_image)
+        cv2.waitKey(5)
 
 
 
@@ -152,11 +158,6 @@ class MotionDetector(object):
         r = rospy.Rate(30)
         
         while not rospy.is_shutdown():
-            if not self.cv_image is None:
-                print self.cv_image.shape
-                cv2.imshow('video_window', self.cv_image)
-                cv2.waitKey(5)
-            
             if not self.threshold_image is None:                
                 cv2.imshow('threshold_image', self.threshold_image)
                 cv2.waitKey(5)
@@ -168,5 +169,5 @@ class MotionDetector(object):
             r.sleep()
 
 if __name__ == '__main__':
-    node = MotionDetector("/camera/image_raw")
+    node = MotionDetector("/camera/image_rect_color")
     node.run()
