@@ -28,6 +28,10 @@ class MotionDetector(object):
         self.hsv_image_blurred = None
         self.binary_image = None
 
+        # Make sure CV images aren't overwritten before they are displayed
+        self.curr_images_already_displayed = True
+
+        # Define parameters based on OpenCV version
         if cv2.__version__=='3.1.0-dev':
             self.bgr2gray = cv2.COLOR_BGR2GRAY
             self.hough_gradient = cv2.HOUGH_GRADIENT
@@ -142,38 +146,40 @@ class MotionDetector(object):
 
         print "process_image"
 
-        self.bgr_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-        self.grayscale_image = cv2.cvtColor(self.bgr_image, self.bgr2gray)
-        self.hsv_image = cv2.cvtColor(self.bgr_image, cv2.COLOR_BGR2HSV)
-        self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
-        self.binary_image = cv2.inRange(self.hsv_image, self.hsv_lb, self.hsv_ub)
+        if self.curr_images_already_displayed:
+            self.bgr_image = self.bridge.imgmsg_to_cv2(msg,
+                desired_encoding="bgr8")
+            self.grayscale_image = cv2.cvtColor(self.bgr_image, self.bgr2gray)
+            self.hsv_image = cv2.cvtColor(self.bgr_image, cv2.COLOR_BGR2HSV)
+            self.hsv_image = cv2.medianBlur(self.hsv_image, 5)
+            self.binary_image = cv2.inRange(self.hsv_image, self.hsv_lb,
+                self.hsv_ub)
 
-        # Parameters for cv2.HoughCircles
-        # dp: inverse ratio of the resolution (smaller = detect less circular
-        #     circles)
-        # minDist: minimum distance between the center of detected circles
-        # param1: gradient value used for edge detection
-        # param2: threshold for center detection
-        # minRadius: minimum size of circle radius in pixels
-        # maxRadius: maximum size of circle radius in pixels
-        circles = cv2.HoughCircles(self.grayscale_image,
-            self.hough_gradient, minDist=30,
-            dp=self.circle_params[0]/float(100),
-            param1=self.circle_params[1], param2=self.circle_params[2],
-            minRadius=0, maxRadius=0)
-        
-        if (circles != None and len(circles)):
-            circles = np.uint16(np.around(circles))
-        
-            for i in circles[0,:]:
-                # Draw outer circle
-                cv2.circle(self.bgr_image, (i[0], i[1]), i[2], (0,255,0), 2)
-                # Draw circle center
-                cv2.circle(self.bgr_image, (i[0], i[1]), 2, (255,0,0), 3)
-                print "circles:", i[0], i[1]
-                
-        else:
-            print "no circles!"
+            # Parameters for cv2.HoughCircles
+            # dp: inverse ratio of the resolution (smaller = detect less circular
+            #     circles)
+            # minDist: minimum distance between the center of detected circles
+            # param1: gradient value used for edge detection
+            # param2: threshold for center detection
+            # minRadius: minimum size of circle radius in pixels
+            # maxRadius: maximum size of circle radius in pixels
+            circles = cv2.HoughCircles(self.grayscale_image,
+                self.hough_gradient, minDist=30,
+                dp=self.circle_params[0]/float(100),
+                param1=self.circle_params[1], param2=self.circle_params[2],
+                minRadius=0, maxRadius=0)
+            
+            if (circles != None and len(circles)):
+                circles = np.uint16(np.around(circles))
+            
+                for i in circles[0,:]:
+                    # Draw outer circle
+                    cv2.circle(self.bgr_image, (i[0], i[1]), i[2], (0,255,0), 2)
+                    # Draw circle center
+                    cv2.circle(self.bgr_image, (i[0], i[1]), 2, (255,0,0), 3)
+                    print "circles:", i[0], i[1]
+
+            self.curr_images_already_displayed = False
 
 
     def run(self):
@@ -182,13 +188,11 @@ class MotionDetector(object):
         r = rospy.Rate(30)
         
         while not rospy.is_shutdown():
-            if not self.bgr_image is None:
-                cv2.imshow('video_window', self.bgr_image)
-                cv2.waitKey(5)
-
-            if not self.binary_image is None:                
+            if (not self.bgr_image is None) and (not self.binary_image is None):
+                cv2.imshow('bgr_window', self.bgr_image)
                 cv2.imshow('binary_window', self.binary_image)
                 cv2.waitKey(5)
+                self.curr_images_already_displayed = True
 
             try:
                 r.sleep()
