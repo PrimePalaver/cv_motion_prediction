@@ -1,5 +1,24 @@
 <launch>
 	<param name="/use_sim_time" value="False" />
+	<arg name="host"/>
+	<arg name="receive_port" default="5000"/>
+	<arg name="width" default="640"/>
+	<arg name="height" default="480"/>
+	<arg name="fps" default="30"/>
+
+	<include file="$(find neato_node)/launch/bringup_minimal.launch">
+	<arg name="host" value="$(arg host)"/>
+	</include>
+	<include file="$(find cv_motion_prediction)/launch/raspi_nodelet_udp.launch">
+	<arg name="host" value="$(arg host)"/>
+	<arg name="receive_port" value="$(arg receive_port)"/>
+	<arg name="width" value="$(arg width)"/>
+	<arg name="height" value="$(arg height)"/>
+	<arg name="fps" value="$(arg fps)"/>
+	</include>
+
+	<node name="image_rectifier" type="image_proc" pkg="image_proc" ns="camera"/>
 	<node name="node" pkg="cv_motion_prediction" type="motion_detector.py" 
             output="screen" />
+
 </launch>

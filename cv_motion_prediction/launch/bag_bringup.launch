@@ -3,6 +3,7 @@
 
 	<arg name="path" default="$(find cv_motion_prediction)/bags/" />
 	<arg name="bag" default="2017-03-23-16-52-47" />
+	<node name="image_rectifier" type="image_proc" pkg="image_proc" ns="camera"/>
 	<node pkg="rosbag" type="play" name="player"
             args="--clock $(arg path)$(arg bag).bag -l"/>
 	
