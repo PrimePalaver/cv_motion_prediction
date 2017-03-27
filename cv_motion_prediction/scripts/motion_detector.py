@@ -46,14 +46,14 @@ class MotionDetector(object):
         # (50, 250, 0), (100, 255, 60) # blue
 
         # HSV filter sliders
-        self.hsv_lb = np.array([0,20,128]) # hsv lower bound
+        self.hsv_lb = np.array([40,50,50]) # hsv lower bound
+        self.hsv_ub = np.array([95,230,120]) # hsv upper bound
         cv2.createTrackbar('H lb', 'sliders_window', self.hsv_lb[0], 255,
             self.set_h_lb)
         cv2.createTrackbar('S lb', 'sliders_window', self.hsv_lb[1], 255,
             self.set_s_lb)
         cv2.createTrackbar('V lb', 'sliders_window', self.hsv_lb[2], 255,
             self.set_v_lb)
-        self.hsv_ub = np.array([20,255,255]) # hsv upper bound
         cv2.createTrackbar('H ub', 'sliders_window', self.hsv_ub[0], 255,
             self.set_h_ub)
         cv2.createTrackbar('S ub', 'sliders_window', self.hsv_ub[1], 255,
