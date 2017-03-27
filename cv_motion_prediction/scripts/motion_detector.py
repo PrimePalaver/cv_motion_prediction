@@ -146,6 +146,7 @@ class MotionDetector(object):
 
         print "process_image"
 
+        # Check that we don't overwrite an image that hasn't been displayed yet
         if self.curr_images_already_displayed:
             self.bgr_image = self.bridge.imgmsg_to_cv2(msg,
                 desired_encoding="bgr8")
