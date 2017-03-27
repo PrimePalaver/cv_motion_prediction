@@ -1,0 +1,29 @@
+<launch>
+  <arg name="host"/>
+  <arg name="receive_port" default="5000"/>
+  <arg name="width" default="640"/>
+  <arg name="height" default="480"/>
+  <arg name="fps" default="30"/>
+
+  <node pkg="nodelet" type="nodelet"
+    name="standalone_nodelet" args="manager"
+    output="screen">
+      <remap from="set_camera_info" to="camera/set_camera_info"/>
+    </node>
+
+  <node pkg="nodelet" type="nodelet"
+    name="GSCamNodelet" 
+    args="load gscam/GSCamNodelet standalone_nodelet" 
+    output="screen">
+    <param name="camera_name" value="camera"/>
+    <param name="camera_info_url" value="package://cv_motion_prediction/fisheye_calibration.yaml"/>
+    <param name="gscam_config" value="udpsrc port=$(arg receive_port) ! application/x-rtp, payload=96 ! rtpjitterbuffer ! rtph264depay ! avdec_h264  ! videoconvert "/>
+  </node>
+  <node pkg="gscam" type="setup_udp_stream.py" name="udp_negotiator" output="screen">
+    <param name="receive_port" value="$(arg receive_port)"/>
+    <param name="host" value="$(arg host)"/>
+    <param name="width" value="$(arg width)"/>
+    <param name="height" value="$(arg height)"/>
+    <param name="fps" value="$(arg fps)"/>
+  </node>         
+</launch>

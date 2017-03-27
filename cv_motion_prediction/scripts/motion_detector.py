@@ -172,5 +172,5 @@ class MotionDetector(object):
 
 
 if __name__ == '__main__':
-    node = MotionDetector("/camera/image_raw")
+    node = MotionDetector("/camera/image_rect_color")
     node.run()
