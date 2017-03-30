@@ -9,6 +9,7 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist, Vector3
+from cv_motion_prediction.msg import Circle
 
 
 class Detector(object):
@@ -17,7 +18,13 @@ class Detector(object):
         """ Initialize the ball detector """
 
         # Initialize ROS node
-        rospy.init_node('ball_detector')
+        rospy.init_node('detector')
+
+        # Suscribe to ROS camera feed from Neato robot
+        self.sub = rospy.Subscriber(image_topic, Image, self.process_image)
+
+        # Create publisher for current detected ball characteristics
+        self.pub = rospy.Publisher('detected_ball', Circle, queue_size=10)
 
         # Initialize CvBridge
         self.bridge = CvBridge() # used to convert ROS messages to OpenCV
@@ -65,11 +72,6 @@ class Detector(object):
         self.blur_amount = 11
         cv2.createTrackbar('blur amount', 'sliders_window', self.blur_amount,
             50, self.set_blur)
-
-        # Suscribe to ROS camera feed from Neato robot
-        rospy.Subscriber(image_topic, Image, self.process_image)
-
-        print "initialization complete"
 
 
     def set_h_lb(self, val):
@@ -141,36 +143,49 @@ class Detector(object):
 
             if len(contours) > 0:
                 largest_contour = max(contours, key=cv2.contourArea)
-                self.detected_ball = cv2.minEnclosingCircle(largest_contour)
-                ((x, y), radius) = self.detected_ball
-                moment = cv2.moments(largest_contour)
-                center = (int(moment["m10"] / moment["m00"]),
-                    int(moment["m01"] / moment["m00"]))
+                ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
+
+                # Find the center of the ball
+                #moment = cv2.moments(largest_contour)
+                #center = (int(moment["m10"] / moment["m00"]),
+                #    int(moment["m01"] / moment["m00"]))
 
                 # drawing blobs
                 if radius > 10:
                     cv2.circle(self.bgr_image, (int(x), int(y)), int(radius),
                         (0, 255, 255), 2)
-                    cv2.circle(self.bgr_image, center, 5, (0, 0, 255), -1)
+                    cv2.circle(self.bgr_image, (int(x), int(y)), 5,
+                        (0, 0, 255), -1)
+
+                    circle = Circle(x, y, radius)
+                    #circle.x = x
+                    #circle.y = y
+                    #circle.radius = radius
+                    self.pub.publish(circle)
                 else:
                     print "Radius too small!"
 
             self.curr_images_already_displayed = False
 
 
+        def run(self):
+            """ Main run function """
+            
+            r = rospy.Rate(30)
+            
+            while not rospy.is_shutdown():
+                if (not self.bgr_image is None) and (not self.binary_image is None):
+                    cv2.imshow('bgr_window', self.bgr_image)
+                    cv2.imshow('binary_window', self.binary_image)
+                    cv2.waitKey(5)
+                    self.curr_images_already_displayed = True
+
+                try:
+                    r.sleep()
+                except rospy.exceptions.ROSTimeMovedBackwardsException:
+                    print "Time went backwards. Carry on."
+
+
 if __name__ == '__main__':
-    node = Detector("/camera/image_rect_color")
-
-    r = rospy.Rate(30)
-    
-    while not rospy.is_shutdown():
-        if (not self.bgr_image is None) and (not self.binary_image is None):
-            cv2.imshow('bgr_window', self.bgr_image)
-            cv2.imshow('binary_window', self.binary_image)
-            cv2.waitKey(5)
-            self.curr_images_already_displayed = True
-
-        try:
-            r.sleep()
-        except rospy.exceptions.ROSTimeMovedBackwardsException:
-            print "Time went backwards. Carry on."
+    detector = Detector("/camera/image_rect_color")
+    detector.run()
