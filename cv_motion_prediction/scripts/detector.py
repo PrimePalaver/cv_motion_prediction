@@ -145,11 +145,6 @@ class Detector(object):
                 largest_contour = max(contours, key=cv2.contourArea)
                 ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
 
-                # Find the center of the ball
-                #moment = cv2.moments(largest_contour)
-                #center = (int(moment["m10"] / moment["m00"]),
-                #    int(moment["m01"] / moment["m00"]))
-
                 # drawing blobs
                 if radius > 10:
                     cv2.circle(self.bgr_image, (int(x), int(y)), int(radius),
@@ -158,9 +153,6 @@ class Detector(object):
                         (0, 0, 255), -1)
 
                     circle = Circle(x, y, radius)
-                    #circle.x = x
-                    #circle.y = y
-                    #circle.radius = radius
                     self.pub.publish(circle)
                 else:
                     print "Radius too small!"
@@ -168,22 +160,22 @@ class Detector(object):
             self.curr_images_already_displayed = False
 
 
-        def run(self):
-            """ Main run function """
-            
-            r = rospy.Rate(30)
-            
-            while not rospy.is_shutdown():
-                if (not self.bgr_image is None) and (not self.binary_image is None):
-                    cv2.imshow('bgr_window', self.bgr_image)
-                    cv2.imshow('binary_window', self.binary_image)
-                    cv2.waitKey(5)
-                    self.curr_images_already_displayed = True
+    def run(self):
+        """ Main run function """
+        
+        r = rospy.Rate(30)
+        
+        while not rospy.is_shutdown():
+            if (not self.bgr_image is None) and (not self.binary_image is None):
+                cv2.imshow('bgr_window', self.bgr_image)
+                cv2.imshow('binary_window', self.binary_image)
+                cv2.waitKey(5)
+                self.curr_images_already_displayed = True
 
-                try:
-                    r.sleep()
-                except rospy.exceptions.ROSTimeMovedBackwardsException:
-                    print "Time went backwards. Carry on."
+            try:
+                r.sleep()
+            except rospy.exceptions.ROSTimeMovedBackwardsException:
+                print "Time went backwards. Carry on."
 
 
 if __name__ == '__main__':

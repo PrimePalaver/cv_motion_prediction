@@ -4,9 +4,11 @@
     radius (m), image radius (pixels), image x position (pixels), and 
     image y position (pixels). """
 
+import rospy
 import math
 from cv_motion_prediction.msg import Circle
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import PointStamped, Point
+from std_msgs.msg import Header
 
 class Localizer(object):
 
@@ -19,7 +21,7 @@ class Localizer(object):
         self.sub = rospy.Subscriber('detected_ball', Circle, self.get_3d_position)
 
         # Create publisher for current detected ball characteristics
-        self.pub = rospy.Publisher('ball_3d_position', Point, queue_size=10)
+        self.pub = rospy.Publisher('ball_3d_position', PointStamped, queue_size=10)
 
         # Set member variables
         self.physical_circumference = .67 # for big blue ball
@@ -56,8 +58,9 @@ class Localizer(object):
         y = d * math.sin(math.atan2(y_cam, self.y_focal_length))
         z = d * math.cos(math.atan2(x_cam, self.x_focal_length))
 
-        point = Point(x, y, z)
-        self.pub.publish(x, y, z)
+        point = PointStamped(header=Header(stamp=rospy.Time.now(),
+            frame_id='base_link'), point=Point(z, -x, y))
+        self.pub.publish(point)
 
 
     def run(self):

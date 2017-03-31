@@ -6,7 +6,7 @@
 	<node name="image_rectifier" type="image_proc" pkg="image_proc"
             ns="camera"/>
 	<node pkg="rosbag" type="play" name="player"
-            args="--clock $(arg path)$(arg bag).bag -l"/>
+            args="--clock $(arg path)$(arg bag).bag -l --rate=.2"/>
 	
 	<node name="detector_node" pkg="cv_motion_prediction"
             type="detector.py" output="screen" />
