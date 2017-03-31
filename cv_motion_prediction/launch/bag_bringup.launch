@@ -3,11 +3,15 @@
 
 	<arg name="path" default="$(find cv_motion_prediction)/bags/" />
 	<arg name="bag" default="2017-03-23-16-52-47" />
-	<node name="image_rectifier" type="image_proc" pkg="image_proc" ns="camera"/>
+	<node name="image_rectifier" type="image_proc" pkg="image_proc"
+            ns="camera"/>
 	<node pkg="rosbag" type="play" name="player"
-            args="--clock $(arg path)$(arg bag).bag -l"/>
+            args="--clock $(arg path)$(arg bag).bag -l --rate=.2"/>
 	
-	<node name="node" pkg="cv_motion_prediction" type="motion_detector.py" 
-            output="screen" />
+	<node name="detector_node" pkg="cv_motion_prediction"
+            type="detector.py" output="screen" />
+
+	<node name="localizer_node" pkg="cv_motion_prediction"
+            type="localizer.py" output="screen" />
 	
 </launch>

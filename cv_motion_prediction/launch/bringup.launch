@@ -6,19 +6,26 @@
 	<arg name="height" default="480"/>
 	<arg name="fps" default="30"/>
 
-	<include file="$(find cv_motion_prediction)/launch/bringup_minimal.launch">
-	<arg name="host" value="$(arg host)"/>
-	</include>
-	<include file="$(find cv_motion_prediction)/launch/raspi_nodelet_udp.launch">
-	<arg name="host" value="$(arg host)"/>
-	<arg name="receive_port" value="$(arg receive_port)"/>
-	<arg name="width" value="$(arg width)"/>
-	<arg name="height" value="$(arg height)"/>
-	<arg name="fps" value="$(arg fps)"/>
+	<include
+            file="$(find cv_motion_prediction)/launch/bringup_minimal.launch">
+            <arg name="host" value="$(arg host)"/>
 	</include>
 
-	<node name="image_rectifier" type="image_proc" pkg="image_proc" ns="camera"/>
-	<node name="node" pkg="cv_motion_prediction" type="motion_detector.py" 
-            output="screen" />
+	<include
+            file="$(find cv_motion_prediction)/launch/raspi_nodelet_udp.launch">
+            <arg name="host" value="$(arg host)"/>
+            <arg name="receive_port" value="$(arg receive_port)"/>
+            <arg name="width" value="$(arg width)"/>
+            <arg name="height" value="$(arg height)"/>
+            <arg name="fps" value="$(arg fps)"/>
+	</include>
+
+	<node name="image_rectifier" type="image_proc" pkg="image_proc"
+            ns="camera"/>
+	<node name="detector_node" pkg="cv_motion_prediction"
+            type="detector.py" output="screen" />
+
+	<node name="localizer_node" pkg="cv_motion_prediction"
+            type="localizer.py" output="screen" />
 
 </launch>

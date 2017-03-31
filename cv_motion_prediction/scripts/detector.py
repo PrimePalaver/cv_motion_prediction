@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Detect a ball, calculate its 3D position, and predict its future behavior. """
+""" Detect a ball in a specified ROS image stream topic. """
 
 import rospy
 from sensor_msgs.msg import Image
@@ -9,15 +9,22 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist, Vector3
+from cv_motion_prediction.msg import Circle
 
 
-class MotionDetector(object):
+class Detector(object):
 
     def __init__(self, image_topic):
-        """ Initialize the ball tracker """
+        """ Initialize the ball detector """
 
         # Initialize ROS node
-        rospy.init_node('motion_detector')
+        rospy.init_node('detector')
+
+        # Suscribe to ROS camera feed from Neato robot
+        self.sub = rospy.Subscriber(image_topic, Image, self.process_image)
+
+        # Create publisher for current detected ball characteristics
+        self.pub = rospy.Publisher('detected_ball', Circle, queue_size=10)
 
         # Initialize CvBridge
         self.bridge = CvBridge() # used to convert ROS messages to OpenCV
@@ -43,11 +50,11 @@ class MotionDetector(object):
         cv2.namedWindow('sliders_window') # window for parameter sliders
 
         # (0,20,128), (20,255,255) # orange
-        # (50, 250, 0), (100, 255, 60) # blue
+        # (45, 50, 50), (100, 255, 130) # blue
 
         # HSV filter sliders
-        self.hsv_lb = np.array([40,50,50]) # hsv lower bound
-        self.hsv_ub = np.array([95,230,120]) # hsv upper bound
+        self.hsv_lb = np.array([0, 20, 128]) # hsv lower bound
+        self.hsv_ub = np.array([20, 255, 255]) # hsv upper bound
         cv2.createTrackbar('H lb', 'sliders_window', self.hsv_lb[0], 255,
             self.set_h_lb)
         cv2.createTrackbar('S lb', 'sliders_window', self.hsv_lb[1], 255,
@@ -65,11 +72,6 @@ class MotionDetector(object):
         self.blur_amount = 11
         cv2.createTrackbar('blur amount', 'sliders_window', self.blur_amount,
             50, self.set_blur)
-
-        # Suscribe to ROS camera feed from Neato robot
-        rospy.Subscriber(image_topic, Image, self.process_image)
-
-        print "initialization complete"
 
 
     def set_h_lb(self, val):
@@ -126,36 +128,41 @@ class MotionDetector(object):
                 desired_encoding="bgr8")
             self.grayscale_image = cv2.cvtColor(self.bgr_image, self.bgr2gray)
             self.hsv_image = cv2.cvtColor(self.bgr_image, cv2.COLOR_BGR2HSV)
-            # self.hsv_image = cv2.medianBlur(self.hsv_image,
-            #     2*self.blur_amount+1)
-            self.blurred_image = cv2.GaussianBlur(self.hsv_image, (self.blur_amount, self.blur_amount), 0)
+            self.blurred_image = cv2.GaussianBlur(self.hsv_image,
+                (self.blur_amount, self.blur_amount), 0)
 
-            self.binary_image = cv2.inRange(self.blurred_image, self.hsv_lb, self.hsv_ub)
+            self.binary_image = cv2.inRange(self.blurred_image, self.hsv_lb,
+                self.hsv_ub)
             self.binary_image = cv2.erode(self.binary_image, None, iterations=3)
             self.binary_image = cv2.dilate(self.binary_image, None, iterations=2)
 
             # blob detection
-            contours = cv2.findContours(self.binary_image.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+            contours = cv2.findContours(self.binary_image.copy(),
+                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
             center = None
 
             if len(contours) > 0:
                 largest_contour = max(contours, key=cv2.contourArea)
                 ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-                moment = cv2.moments(largest_contour)
-                center = (int(moment["m10"] / moment["m00"]), int(moment["m01"] / moment["m00"]))
 
                 # drawing blobs
                 if radius > 10:
                     cv2.circle(self.bgr_image, (int(x), int(y)), int(radius),
                         (0, 255, 255), 2)
-                    cv2.circle(self.bgr_image, center, 5, (0, 0, 255), -1)
+                    cv2.circle(self.bgr_image, (int(x), int(y)), 5,
+                        (0, 0, 255), -1)
+
+                    circle = Circle(x, y, radius)
+                    self.pub.publish(circle)
+                else:
+                    print "Radius too small!"
 
             self.curr_images_already_displayed = False
 
 
     def run(self):
         """ Main run function """
-
+        
         r = rospy.Rate(30)
         
         while not rospy.is_shutdown():
@@ -172,5 +179,5 @@ class MotionDetector(object):
 
 
 if __name__ == '__main__':
-    node = MotionDetector("/camera/image_rect_color")
-    node.run()
+    detector = Detector("/camera/image_rect_color")
+    detector.run()
