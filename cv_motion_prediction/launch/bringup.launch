@@ -28,4 +28,7 @@
 	<node name="localizer_node" pkg="cv_motion_prediction"
             type="localizer.py" output="screen" />
 
+    <node name="predictor_node" pkg="cv_motion_prediction"
+            type="predictor.py" output="screen" />
+
 </launch>
