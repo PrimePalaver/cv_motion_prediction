@@ -43,11 +43,13 @@ class Predictor(object):
         vel.header = Header(stamp=rospy.Time.now(), frame_id="base_link")
         vel.type = Marker.ARROW
         vel.points = [Point(x=x,y=y, z=z),
-                      Point(x=x+scale*x_diff, y=y+scale*y_diff, z=z+scale*z_diff)]
+                      Point(x=x+scale*x_vel, y=y+scale*y_vel, z=z+scale*z_vel)]
         vel.color = ColorRGBA(r=255, g=0, b=0, a=1.0)
         vel.scale = Vector3(x=.05, y=.05)
 
         self.pub.publish(vel)
+
+        self.previous_position = msg
 
     def run(self):
         """ Main run function """
