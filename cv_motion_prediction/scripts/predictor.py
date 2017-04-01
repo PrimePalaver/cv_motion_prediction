@@ -23,7 +23,7 @@ class Predictor(object):
         self.pub = rospy.Publisher('ball_velocity', Marker, queue_size=10)
 
         self.previous_position = PointStamped(header=Header(stamp=rospy.Time.now(), frame_id="base_link"))
-
+        self.previous_velocities = [(0.0, 0.0, 0.0)] * 10
 
     def estimate_velocity(self, msg):
         x = msg.point.x
@@ -38,18 +38,24 @@ class Predictor(object):
         y_vel = y_diff/t_diff
         z_vel = z_diff/t_diff
 
+        self.previous_position = msg
+        self.previous_velocities.append((x_vel, y_vel, z_vel))
+        self.previous_velocities = self.previous_velocities[1:]
+
+        vel_avg = [float(sum(axis)) / len(axis) for axis in zip(*self.previous_velocities)]
+
         scale = 1.0
         vel = Marker()
         vel.header = Header(stamp=rospy.Time.now(), frame_id="base_link")
         vel.type = Marker.ARROW
         vel.points = [Point(x=x,y=y, z=z),
-                      Point(x=x+scale*x_vel, y=y+scale*y_vel, z=z+scale*z_vel)]
+                      Point(x=x+scale*vel_avg[0], y=y+scale*vel_avg[1], z=z+scale*vel_avg[2])]
         vel.color = ColorRGBA(r=255, g=0, b=0, a=1.0)
         vel.scale = Vector3(x=.05, y=.05)
 
         self.pub.publish(vel)
 
-        self.previous_position = msg
+
 
     def run(self):
         """ Main run function """

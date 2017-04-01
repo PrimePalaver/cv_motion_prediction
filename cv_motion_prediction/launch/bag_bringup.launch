@@ -4,7 +4,7 @@
 	<param name="robot_description" command="$(arg urdf_file)" />
 
 	<arg name="path" default="$(find cv_motion_prediction)/bags/" />
-	<arg name="bag" default="2017-03-23-16-04-35" />
+	<arg name="bag" default="orange_classroom" />
 	<arg name="rate" default="1" />
 
 	<node name="image_rectifier" type="image_proc" pkg="image_proc"
