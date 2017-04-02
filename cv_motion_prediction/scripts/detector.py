@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-""" Detect a ball in a specified ROS image stream topic. """
+""" Detect a ball in a specified ROS image stream topic. Publish the
+    ball's position and size. """
 
 import rospy
 from sensor_msgs.msg import Image
@@ -118,7 +119,7 @@ class Detector(object):
 
     def process_image(self, msg):
         """ Process image messages from ROS and stash them in an attribute
-            called bgr_image for subsequent processing """
+            called bgr_image for subsequent processing. """
 
         print "process_image"
 
@@ -136,16 +137,17 @@ class Detector(object):
             self.binary_image = cv2.erode(self.binary_image, None, iterations=3)
             self.binary_image = cv2.dilate(self.binary_image, None, iterations=2)
 
-            # blob detection
+            # Blob detection
             contours = cv2.findContours(self.binary_image.copy(),
                 cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
             center = None
 
+            # Draw bounding circle around largest contour
             if len(contours) > 0:
                 largest_contour = max(contours, key=cv2.contourArea)
                 ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
 
-                # drawing blobs
+                # Draw circles on image to represent the ball
                 if radius > 10:
                     cv2.circle(self.bgr_image, (int(x), int(y)), int(radius),
                         (0, 255, 255), 2)
