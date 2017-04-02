@@ -39,24 +39,32 @@ class Localizer(object):
 
     def get_3d_position(self, msg):
         """ Take in the position and size of a ball within a camera stream
-        and output the 3D position of the ball relative to the camera. """
+            and output the 3D position of the ball relative to the camera. """
 
+        # Define the ball's position in the image where the origin is in the
+        # center of the image, +x is to the right, and +y is up
         x_pos = msg.x
         y_pos = msg.y
         image_radius = msg.radius
 
+        # Redefine the ball's position in the image where the origin is in the
+        # top left, +x is to the right, and +y is down
         x_cam = x_pos - self.x_optical_center
         y_cam = 480 - y_pos - self.y_optical_center
 
+        # Find the slopes from the camera's point of view to the ball
         m_x = x_cam / self.x_focal_length
         m_y = y_cam / self.y_focal_length
  
+        # Find the hypotenuse from the camera's point of view to the ball
         d = (self.avg_focal_length * self.physical_radius) / float(image_radius)
 
+        # Find the x, y, and z components of the hypotenuse
         x = d * math.sin(math.atan2(x_cam, self.x_focal_length))
         y = d * math.sin(math.atan2(y_cam, self.y_focal_length))
         z = d * math.cos(math.atan2(x_cam, self.x_focal_length))
 
+        # Publish the ball's 3D position as a PointStamped
         point = PointStamped(header=Header(stamp=rospy.Time.now(),
             frame_id='base_link'), point=Point(z, -x, y))
         self.pub.publish(point)
