@@ -1,18 +1,25 @@
 <launch>
+
     <param name="/use_sim_time" value="true" />
     <arg name="urdf_file" default="$(find xacro)/xacro.py
         '$(find neato_simulator)/model/neato.urdf.xacro'" />
     <param name="robot_description" command="$(arg urdf_file)" />
 
+    <!-- Play specified bag file -->
     <arg name="path" default="$(find cv_motion_prediction)/bags/" />
     <arg name="bag" default="2017-03-23-16-04-35" />
     <arg name="rate" default="1" />
-
-    <node name="image_rectifier" type="image_proc" pkg="image_proc"
-        ns="camera"/>
     <node pkg="rosbag" type="play" name="player"
         args="--clock $(arg path)$(arg bag).bag -l --rate=$(arg rate)"/>
-    
+
+    <!-- Undistort image stream -->
+    <node name="image_rectifier" type="image_proc" pkg="image_proc"
+        ns="camera"/>
+
+    <!-- Uncompress image stream -->
+    <node name="uncompress_node" pkg="image_transport" type="republish"
+        args="in:=/camera/image_raw compressed out:=/camera/image_raw raw" />
+
     <node name="detector_node" pkg="cv_motion_prediction"
         type="detector.py" output="screen" />
 
@@ -22,7 +29,4 @@
     <node name="predictor_node" pkg="cv_motion_prediction"
         type="predictor.py" output="screen" />
 
-    <node name="uncompress_node" pkg="image_transport" type="republish"
-        args="in:=/camera/image_raw compressed out:=/camera/image_raw raw" />
-            
 </launch>
