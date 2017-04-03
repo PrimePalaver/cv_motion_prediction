@@ -18,14 +18,21 @@ Our ball detection algorithm is based on color thresholding and contour detectio
 ### Ball Localization
 
 Given that we know the size of the ball, we can determine how far away it is from the camera using the equation,
-    Distance = Focal_Length * Ball_Radius / Perceived_Radius.
+
+```
+Distance = Focal_Length * Ball_Radius / Perceived_Radius
+```
 
 The focal length of raspi camera with the fisheye attachment is known from the camera calibration, which is published on the /camera/camera_info topic. The Ball_Radius is given in meters, so that the output Distance is also in meters. The Perceived_Radius is given by the size of the bounding circle, which is in units of pixels.
 
 With the focal length, we can also determine the x and y slopes of ball from the camera using the equations,
-        X/Z =  x_cam / focal length,
-        Y/Z =  y_cam / focal length,
-    where (x_cam, y_cam) are the coordinates of the center of the bounding circle from the optical center of the image, which can also be found in the camera calibration data. In our case, the optical center of the image was within half a pixel of the middle pixel.
+
+```
+X/Z =  x_cam / focal length
+Y/Z =  y_cam / focal length
+```
+
+where (x_cam, y_cam) are the coordinates of the center of the bounding circle from the optical center of the image, which can also be found in the camera calibration data. In our case, the optical center of the image was within half a pixel of the middle pixel.
     The 3D coordinates of the ball can then be calculated relative to the camera by placing it at the calculated distance along the line defined by the slopes. 
 
 ![localization_reference](localization_reference.png)
