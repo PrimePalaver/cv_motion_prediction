@@ -28,6 +28,10 @@ With the focal length, we can also determine the x and y slopes of ball from the
     where (x_cam, y_cam) are the coordinates of the center of the bounding circle from the optical center of the image, which can also be found in the camera calibration data. In our case, the optical center of the image was within half a pixel of the middle pixel.
     The 3D coordinates of the ball can then be calculated relative to the camera by placing it at the calculated distance along the line defined by the slopes. 
 
+![localization_reference](localization_reference.png)
+
+The above image is from Paul Ruvolo's [course website](https://sites.google.com/site/comprobo17/in-class/day-13) for *Introduction to Computational Robotics* at Olin College.
+
 ### Velocity Estimation
 
 The velocity of the ball is determined by comparing its current position with the position from the previous time step. We found this estimation to be very noisy, so we compute a rolling average of the latest 10 velocities. 
