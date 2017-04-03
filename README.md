@@ -13,6 +13,8 @@ Our goal was to be able to detect, localize, and predict the trajectory of a soc
 
 Our ball detection algorithm is based on color thresholding and contour detection. After thresholding for the color of the ball (in HSV), a smallest bounding circle is drawn around the largest contour.
 
+![ball_detection](ball_detection.png)
+
 ### Ball Localization
 
 Given that we know the size of the ball, we can determine how far away it is from the camera using the equation,
